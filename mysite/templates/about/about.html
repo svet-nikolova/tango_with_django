@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+{% load staticfiles %} <!-- New line -->
+
+<html>
+    <head>
+        <title>About</title>
+    </head>
+    
+    <body>
+        <h1>Rango says here is the about page.</h1>
+        
+        <div>
+            This tutorial has been put together by Svetoslava Nikolova. <br />
+            <strong>{{ boldmessage }}</strong><br />
+        </div>
+
+        <div>
+
+            <img /> tag like <img src="{{ MEDIA_URL}}cat.jpg"><br /> <!-- New line -->
+
+            <a href="/rango/">Index</a><br />
+        </div>
+    </body>
+    
+</html>
