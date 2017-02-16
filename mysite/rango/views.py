@@ -6,16 +6,75 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+from datetime import datetime
+
+
+def get_server_side_cookie(request, cookie, default_val=None):
+    val = request.session.get(cookie)
+    if not val:
+        val = default_val
+    return val
+
+
+# Updated the function definition
+def visitor_cookie_handler(request):
+    visits = int(get_server_side_cookie(request, 'visits', '1'))
+    last_visit_cookie = get_server_side_cookie(request,'last_visit', str(datetime.now()))
+    last_visit_time = datetime.strptime(last_visit_cookie[:-7], '%Y-%m-%d %H:%M:%S')
+
+    # If it's been more than a day since the last visit...
+    if (datetime.now() - last_visit_time).days > 0:
+        visits = visits + 1
+
+        # update the last visit cookie now that we have updated the count
+        request.session['last_visit'] = str(datetime.now())
+    else:
+        visits = 1
+
+        # set the last visit cookie
+        request.session['last_visit'] = last_visit_cookie # Update/set the visits cookie
+    request.session['visits'] = visits
+
+
+def visitor_cookie_handler(request):
+    # Get the number of visits to the site.
+    # We use the COOKIES.get() function to obtain the visits cookie.
+    # If the cookie exists, the value returned is casted to an integer.
+    # If the cookie doesn't exist, then the default value of 1 is used.
+    visits = int(get_server_side_cookie(request, 'visits', '1'))
+
+    last_visit_cookie = get_server_side_cookie(request, 'last_visit', str(datetime.now()))
+
+    last_visit_time = datetime.strptime(last_visit_cookie[:-7], "%Y-%m-%d %H:%M:%S")
+
+    # last_visit_time = datetime.now()
+    # If it's been more than a day since the last visit...
+    if (datetime.now() - last_visit_time).seconds > 0:
+        visits += 1
+        # update the last visit cookie now that we have updated the count
+        request.session['last_visit'] = str(datetime.now())
+    else:
+        visits = 1
+        # set the last visit cookie
+        request.session['last_visit'] = last_visit_cookie
+    # update/set the visits cookie
+    request.session['visits'] = visits
 
 
 def index(request):
+
     category_list = Category.objects.order_by('-likes')[:5]
     page_list = Page.objects.order_by('-views')[:5]
     context_dict = {'categories': category_list, 'pages': page_list}
+    visitor_cookie_handler(request)
+    context_dict['visits'] = request.session['visits']
+    response = render(request, 'rango/index.html', context=context_dict)
+    return response
 
-    # Render the response and send it back!
 
-    return render(request, 'rango/index.html', context_dict)
+def about(request):
+
+    return render(request, 'rango/about.html')
 
 
 def show_category(request, category_name_slug):
@@ -174,7 +233,8 @@ def user_login(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
 
-        # Use Django's machinery to attempt to see if the username/password # combination is valid - a User object is returned if it is.
+        # Use Django's machinery to attempt to see if the username/password
+        # combination is valid - a User object is returned if it is.
         user = authenticate(username=username, password=password)
 
         # If we have a User object, the details are correct.
@@ -184,8 +244,8 @@ def user_login(request):
             # Is the account active? It could have been disabled.
             if user.is_active:
 
-            # If the account is valid and active, we can log the user in.
-            # We'll send the user back to the homepage.
+                # If the account is valid and active, we can log the user in.
+                # We'll send the user back to the homepage.
                 login(request, user)
                 return HttpResponseRedirect(reverse('index'))
             else:
